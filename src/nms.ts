@@ -1,6 +1,6 @@
 import { Server, CustomTransportStrategy } from '@nestjs/microservices';
 import { NodeMediaServer } from 'node-media-server';
-import { NMSOption } from './option.interface';
+import { NMSOption, streamCB } from './option.interface';
 
 export class NMServer extends Server implements CustomTransportStrategy {
     private server;
@@ -24,8 +24,15 @@ export class NMServer extends Server implements CustomTransportStrategy {
         })
     }
 
-    public setEventHandler(event: string, callback) {
-        this.server.on(event, callback);
+    public setEventHandler(event: string, callback: streamCB) {
+        const wrap = this.extendArg(callback);
+        this.server.on(event, wrap);
+    }
+
+    // extending args...
+    private extendArg(func: streamCB) {
+        // @ts-ignore
+        return (...args) => func(...args, this.server.getSession); // ????
     }
 
     private init() {
